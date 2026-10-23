@@ -664,6 +664,16 @@
     let currentQuestion = 0;
     let score = 0;
     let answered = false;
+    let quizQuestions = [];
+
+    function shuffleQuestions(items) {
+      const shuffled = [...items];
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+      }
+      return shuffled;
+    }
 
     function renderWelcome() {
       app.innerHTML = `
@@ -673,24 +683,29 @@
           <div class="intro-art" aria-hidden="true">🚀</div>
           <p class="intro-copy">Explore planets, missions, and the mysteries beyond. How much do you know about space?</p>
           <div class="meta-row" aria-label="Quiz details">
-            <span class="meta-pill">✦ 10 questions</span>
+            <span class="meta-pill">✦ ${questions.length} questions</span>
             <span class="meta-pill">◷ About 3 minutes</span>
           </div>
           <button class="primary-button" type="button" id="start-button">Start exploring <span aria-hidden="true">→</span></button>
         </div>`;
-      document.querySelector("#start-button").addEventListener("click", renderQuestion);
+      document.querySelector("#start-button").addEventListener("click", () => {
+        currentQuestion = 0;
+        score = 0;
+        quizQuestions = shuffleQuestions(questions);
+        renderQuestion();
+      });
     }
 
     function renderQuestion() {
       answered = false;
-      const item = questions[currentQuestion];
-      const progress = (currentQuestion / questions.length) * 100;
+      const item = quizQuestions[currentQuestion];
+      const progress = (currentQuestion / quizQuestions.length) * 100;
       const letters = ["A", "B", "C", "D"];
       app.innerHTML = `
         <div class="screen">
           <div class="quiz-top">
-            <div class="question-count"><strong>Question ${currentQuestion + 1}</strong> of ${questions.length}
-              <div class="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="${questions.length}" aria-valuenow="${currentQuestion}">
+            <div class="question-count"><strong>Question ${currentQuestion + 1}</strong> of ${quizQuestions.length}
+              <div class="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="${quizQuestions.length}" aria-valuenow="${currentQuestion}">
                 <div class="progress-fill" style="width:${progress}%"></div>
               </div>
             </div>
@@ -715,7 +730,7 @@
     function chooseAnswer(selection) {
       if (answered) return;
       answered = true;
-      const item = questions[currentQuestion];
+      const item = quizQuestions[currentQuestion];
       const isCorrect = selection === item.correct;
       const buttons = app.querySelectorAll(".answer");
       buttons.forEach((button, index) => {
@@ -734,19 +749,19 @@
           <strong>${isCorrect ? "That's right! " : "Not quite. "}</strong>${item.fact}
         </div>
         <button class="primary-button next-button" type="button" id="next-button">
-          ${currentQuestion === questions.length - 1 ? "See my results" : "Next question"}
+          ${currentQuestion === quizQuestions.length - 1 ? "See my results" : "Next question"}
           <span aria-hidden="true">→</span>
         </button>`;
       document.querySelector("#next-button").addEventListener("click", () => {
         currentQuestion += 1;
-        if (currentQuestion === questions.length) renderResults();
+        if (currentQuestion === quizQuestions.length) renderResults();
         else renderQuestion();
       });
       document.querySelector("#next-button").focus();
     }
 
     function renderResults() {
-      const ratio = score / questions.length;
+      const ratio = score / quizQuestions.length;
       const result = ratio === 1
         ? { emoji: "🏆", title: "Out of this world!", copy: "A perfect mission. Your space knowledge is stellar." }
         : ratio >= .7
@@ -769,12 +784,12 @@
           <p class="eyebrow">Mission complete</p>
           <div class="celebration-stage">
             ${laserBeams}
-            ${score === questions.length ? '<span class="disco-ball" aria-hidden="true">🪩</span>' : ""}
+            ${score === quizQuestions.length ? '<span class="disco-ball" aria-hidden="true">🪩</span>' : ""}
             <div class="result-emoji" role="img" aria-label="${result.emoji}">${result.emoji}</div>
           </div>
           <h2>${result.title}</h2>
           <p class="result-copy">${result.copy}</p>
-          <div class="final-score">You scored <strong>${score} / ${questions.length}</strong></div>
+          <div class="final-score">You scored <strong>${score} / ${quizQuestions.length}</strong></div>
           <button class="primary-button" type="button" id="restart-button">Explore again <span aria-hidden="true">↻</span></button>
         </div>`;
       document.querySelector("#restart-button").addEventListener("click", () => {
