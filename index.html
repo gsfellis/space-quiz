@@ -453,6 +453,17 @@
       letter-spacing: -.04em;
     }
 
+    .personal-best {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .personal-best strong {
+      font-size: inherit;
+      letter-spacing: normal;
+    }
+
     .text-button {
       display: inline-block;
       padding: 8px 12px;
@@ -661,6 +672,7 @@
     ];
 
     const app = document.querySelector("#app");
+    const personalBestKey = "orbitQuizPersonalBest";
     let currentQuestion = 0;
     let score = 0;
     let answered = false;
@@ -673,6 +685,31 @@
         [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
       }
       return shuffled;
+    }
+
+    function readPersonalBest() {
+      try {
+        const storedScore = window.localStorage.getItem(personalBestKey);
+        if (storedScore === null) return { available: true, score: null };
+        if (storedScore.trim() === "") return { available: true, score: null };
+        const best = Number(storedScore);
+        const score = Number.isInteger(best) && best >= 0 && best <= questions.length ? best : null;
+        return { available: true, score };
+      } catch {
+        return { available: false, score: null };
+      }
+    }
+
+    function updatePersonalBest(currentScore) {
+      const storedBest = readPersonalBest();
+      if (!storedBest.available) return currentScore;
+      if (storedBest.score !== null && storedBest.score >= currentScore) return storedBest.score;
+      try {
+        window.localStorage.setItem(personalBestKey, String(currentScore));
+      } catch {
+        // Keep quiz results available even when browser storage is blocked.
+      }
+      return currentScore;
     }
 
     function renderWelcome() {
@@ -761,6 +798,7 @@
     }
 
     function renderResults() {
+      const personalBest = updatePersonalBest(score);
       const ratio = score / quizQuestions.length;
       const result = ratio === 1
         ? { emoji: "🏆", title: "Out of this world!", copy: "A perfect mission. Your space knowledge is stellar." }
@@ -789,7 +827,10 @@
           </div>
           <h2>${result.title}</h2>
           <p class="result-copy">${result.copy}</p>
-          <div class="final-score">You scored <strong>${score} / ${quizQuestions.length}</strong></div>
+          <div class="final-score">
+            <div>You scored <strong>${score} / ${quizQuestions.length}</strong></div>
+            <div class="personal-best">Personal best <strong>${personalBest} / ${quizQuestions.length}</strong></div>
+          </div>
           <button class="primary-button" type="button" id="restart-button">Explore again <span aria-hidden="true">↻</span></button>
         </div>`;
       document.querySelector("#restart-button").addEventListener("click", () => {
